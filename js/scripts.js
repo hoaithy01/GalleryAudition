@@ -135,6 +135,7 @@ function clearForm() {
 $("#ss-submit").click(function() {
 	var isSuccess = validate();
 	if (isSuccess) {
+		$('body').addClass('loading');
 		/*$(".bs-example-modal-sm").modal("show");
 		$(".modal-header .modal-title").html("Đăng ký");
 		$(".modal-content .modal-body p").html("Xin đợi quá trình đăng ký được hoàn thành!");*/
@@ -154,11 +155,13 @@ $("#ss-submit").click(function() {
 					$(".modal-header .modal-title").html("Lỗi");
 					$(".bs-example-modal-sm").modal("show");
 				} else {
-					// clearForm();
+					clearForm();
 					$(".modal-header .modal-title").html("Thành Công");
 					$(".modal-content .modal-body p").html("Đăng ký thành công!<br>Chúng tôi đã gửi mail tới bạn.<br> Xin hãy kiểm tra lại");
 					$(".bs-example-modal-sm").modal("show");
 				}
+			}, complete: function() {
+				$('body').removeClass('loading');
 			}
 		})
 	}
