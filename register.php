@@ -6,7 +6,7 @@ class Register {
 	private $msg = "";
 	private $status = "ok";
 	public function execute() {
-		$file = "csv/galleryAudition.csv";
+		$file = "ftp/csv/galleryAudition.csv";
 		$value = $this->getDataFromUser();
 		$this->createCSV($file);
 		$this->writeCSV($value,$file);
@@ -142,7 +142,7 @@ class Register {
 	}
 
 	function getFileUploadImage() {
-		$target_dir = FILEPATH . "/uploads";
+		$target_dir = FILEPATH . "ftp/uploads";
 		$target_file = $target_dir . "/" . $this->randomName() . basename($_FILES["avatar"]["name"]);
 		$uploadOk = 1;
 		$imageFileType = pathinfo($target_file,PATHINFO_EXTENSION);
