@@ -6,7 +6,7 @@ class Register {
 	private $msg = "";
 	private $status = "ok";
 	public function execute() {
-		$file = "galleryAudition.csv";
+		$file = "csv/galleryAudition.csv";
 		$value = $this->getDataFromUser();
 		$this->createCSV($file);
 		$this->writeCSV($value,$file);
