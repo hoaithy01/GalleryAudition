@@ -152,26 +152,25 @@ $("#ss-submit").click(function() {
 			success: function(res) {
 				if (res.status == "ng") {
 					$(".modal-content .modal-body p").html(res.msg);
-					$(".modal-header .modal-title").html("Lỗi");
-					$(".bs-example-modal-sm").modal("show");
+					// $(".modal-header .modal-title").html("Lỗi");
 				} else {
 					clearForm();
-					$(".modal-header .modal-title").html("Thành Công");
+					// $(".modal-header .modal-title").html("Thành Công");
 					$(".modal-content .modal-body p").html("Đăng ký thành công!<br>Chúng tôi đã gửi mail tới bạn.<br> Xin hãy kiểm tra lại");
-					$(".bs-example-modal-sm").modal("show");
 				}
 			}, complete: function() {
 				$('body').removeClass('loading');
+				$(".modal-block").modal("show");
 			}
 		})
 	}
 	return false;
 })
 
-var files;
-$('input[type=file]').on('change', function(e) {
-	files = e.target.files;
-})
+// var files;
+// $('input[type=file]').on('change', function(e) {
+// 	files = e.target.files;
+// })
 
 $(".ss-q-short").each(function() {
 	$(this).keyup(function() {
