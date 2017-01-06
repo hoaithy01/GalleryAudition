@@ -153,19 +153,32 @@ $("#ss-submit").click(function() {
 				if (res.status == "ng") {
 					$(".modal-content .modal-body p").html(res.msg);
 					// $(".modal-header .modal-title").html("Lỗi");
-				} else {
+					$(".modal-block").modal("show");
+				} else if(res.status == "validate") {
+					serverValidate(res.error);
+				} else if(res.status == "ok") {
 					clearForm();
 					// $(".modal-header .modal-title").html("Thành Công");
 					$(".modal-content .modal-body p").html("Đăng ký thành công!<br>Chúng tôi đã gửi mail tới bạn.<br> Xin hãy kiểm tra lại");
+					$(".modal-block").modal("show");
 				}
 			}, complete: function() {
 				$('body').removeClass('loading');
-				$(".modal-block").modal("show");
 			}
 		})
 	}
 	return false;
 })
+
+function serverValidate(res) {
+	var arr = Object.keys(res);
+	arr.forEach(function(n) {
+		if (res[n] != "")
+			$("input[name="+n+"]").parent().addClass("has-error").find(".help-block").html(res[n]["msg"]).fadeIn("slow");
+		else 
+			$("input[name="+n+"]").parent().removeClass("has-error").find(".help-block").html("This is a required question").hide();
+	})
+}
 
 // var files;
 // $('input[type=file]').on('change', function(e) {

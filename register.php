@@ -5,6 +5,12 @@ define('FILEPATH', realpath(dirname(__FILE__)));
 class Register {
 	private $msg = "";
 	private $status = "ok";
+	private $MSG01 = "Bạn phải điền ít nhất 3 ký tự!";
+	private $MSG04 = "Chỉ được nhập số";
+	private $MSG02 = "Số điện thoại ít nhất 10 chữ số!";
+	private $MSG03 = "Email không đúng!";
+	private $MSG05 = "Sai định dạng ngày! ví dụ: (31/12/1992)";
+
 	public function execute() {
 		$file = "ftp/csv/galleryAudition.csv";
 		$value = $this->getDataFromUser();
@@ -41,8 +47,12 @@ class Register {
 		return $html;
 	}
 
-	function generatePDFFile($html) {
-		$name = $this->randomName() . "Gallery Audition Information.pdf";
+	private function generatePDFFile($html) {
+		$dir = "pdf";
+		if (!is_dir($dir)) {
+			mkdir($dir, "0777", true);
+		}
+		$name = $dir . "/" . $this->randomName() . "Gallery Audition Information.pdf";
 		$mpdf=new mPDF('utf-8', 'Letter', 0, '', 0, 0, 0, 0, 0, 0);
 
 		$mpdf->autoScriptToLang = true;
@@ -53,7 +63,7 @@ class Register {
 		return $name;
 	}
 
-	function sendMailWithAttachFile($fileName, $mailTo, $clientName) {
+	private function sendMailWithAttachFile($fileName, $mailTo, $clientName) {
 		$mail = new PHPMailer;
 
 		//$mail->SMTPDebug = 3;                               // Enable verbose debug output
@@ -90,7 +100,7 @@ class Register {
 
 	}
 
-	function createCSV($file) {
+	private function createCSV($file) {
 		$header = array(
 			"Time","Họ và tên","Địa chỉ","Ngày sinh","Số điện thoại","Email","Image Link"
 		);
@@ -104,7 +114,7 @@ class Register {
 		fclose($output);
 	}
 
-	function writeCSV($value = null, $file) {
+	private function writeCSV($value = null, $file) {
 		if (is_null($value)) {
 			return;
 		}
@@ -118,7 +128,7 @@ class Register {
 		fclose($output);
 	}
 
-	function format_phone_number($number) {
+	private function format_phone_number($number) {
 		$number = str_replace(" ", "", $number);
 		if (strlen($number) == 10) {
 			$result = preg_replace('~.*(\d{4})(\d{3})(\d{3}).*~', '$1 $2 $3', $number);
@@ -129,7 +139,7 @@ class Register {
 	    return $result;
 	}
 
-	function getDataFromUser() {
+	private function getDataFromUser() {
 		$value = new stdClass();
 		$value->time = date("Y/m/d H:i:s");
 		$value->name = $_POST["name"];
@@ -138,10 +148,76 @@ class Register {
 		$value->phone = $this->format_phone_number($_POST["phone"]);
 		$value->email = $_POST["email"];
 		$value->image = $this->getFileUploadImage();
+		$this->validateInput($value);
 		return $value;
 	}
 
-	function getFileUploadImage() {
+	private function validateInput($item) {
+		$validate = array();
+		$validate["name"] = $this->validateName($item->name);
+		$validate["address"] = $this->validateAddress($item->address);
+		$validate["dob"] = $this->validateDate($item->dob);
+		$validate["phone"] = $this->validatePhone($item->phone);
+		$validate["mail"] = $this->validateEmail($item->email);
+		$validate["avatar"] = $item->image;
+		foreach ($validate as $key => $value) {
+			if (is_array($value)){
+				echo json_encode(array("status"=>"validate", "error"=>$validate));
+				exit();
+			}
+		}
+	}
+
+	private function validateEmail($mail) {
+		$regex = '/^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,4})+$/';
+		$isSuccess = preg_match($regex, $mail);
+		if ($isSuccess == false) {
+			return array("error"=>"03", "msg"=>$this->MSG03);
+		}
+		return "";
+	}
+
+	private function validatePhone($phone) {
+		$p = "";
+		$regex = '/^\d*$/';
+		if (strlen($phone) < 10) {
+			$p = array('error' => "02", "msg" => $this->MSG02);
+		} else if (preg_match($regex, $phone) == false) {
+			$p = array('error' => "04", "msg" => $this->MSG04);
+		}
+		return $p;
+	}
+
+	private function validateName($name) {
+		if (strlen($name) < 3) {
+			return array('error' => "01", "msg" => $this->MSG01);
+		}
+		return "";
+	}
+
+	private function validateDate($date) {
+		if (strpos($date,"-")) {	
+	    	$d = DateTime::createFromFormat('d-m-Y', $date);
+			$dob = $d && $d->format('d-m-Y') === $date;
+		}else if (strpos($date,"/")) {
+			$d = DateTime::createFromFormat('d/m/Y', $date);
+			$dob = $d && $d->format('d/m/Y') === $date;
+		} else {
+			$dob = false;
+		}
+		if ($dob == false) {
+			return array('error' => "05", "msg" => $this->MSG05);
+		}
+		return "";
+	}
+	private function validateAddress($address) {
+		if (strlen($address) < 3) {
+			return array('error' => "01", "msg" => $this->MSG01);
+		}
+		return "";
+	}
+
+	private function getFileUploadImage() {
 		$target_dir = FILEPATH . "ftp/uploads";
 		$target_file = $target_dir . "/" . $this->randomName() . basename($_FILES["avatar"]["name"]);
 		$uploadOk = 1;
@@ -160,30 +236,22 @@ class Register {
 		// }
 		// Check if file already exists
 		if (file_exists($target_file)) {
-		    $this->msg = "Sorry, file already exists.";
-		    $this->status = "ng";
-		    $this->uploadOk = 0;
-		    $this->returnError();
+		    return array("error"=>"06", "msg" => $this->MSG06);
 		}
 		// Check file size
-		if ($_FILES["avatar"]["size"] > 700000) {
-		    $this->msg = "Sorry, your file is too large.";
-		    $this->status = "ng";
-		    $this->uploadOk = 0;
-		    $this->returnError();
+		if ($_FILES["avatar"]["size"] > 1000000) {
+		    return array("error"=>"07", "msg" => $this->MSG07);
 		}
 
 		// Allow certain file formats
 		if($imageFileType != "jpg" && $imageFileType != "png" && $imageFileType != "jpeg"
 		&& $imageFileType != "gif" ) {
-		    $this->msg = "Sorry, only JPG, JPEG, PNG & GIF files are allowed.";
-			$this->status = "ng";
+			return array("error"=>"08", "msg" => $this->MSG08);
 		    $this->uploadOk = 0;
-		    $this->returnError();
 		}
 
 		if (!is_dir($target_dir)) {
-			mkdir($target_dir);
+			mkdir($target_dir,"0777", true);
 		}
 		// Check if $uploadOk is set to 0 by an error
 
@@ -196,14 +264,16 @@ class Register {
 			if (move_uploaded_file($_FILES["avatar"]["tmp_name"], $target_file)) {
 			    $this->msg = "The file ". basename( $_FILES["avatar"]["name"]). " has been uploaded.";
 			} else {
-			    $this->msg = "Sorry, there was an error uploading your file.";
-			    $this->status = "ng";
-			    $this->returnError();
+			    return array("error"=>"09", "msg" => $this->MSG09);
 			}
 			return $target_file;
 		}
 	}
-	function randomName() {
+	private $MSG06 = "Xử lý hình lỗi, xin tải lại!";
+	private $MSG07 = "Chỉ có thể up hình dưới 1MB!";
+	private $MSG08 = "Chỉ nhận định dạng file JPG, JPEG, PNG & GIF";
+	private $MSG09 = "Không up được hình, có thể do file ảnh quá lớn!";
+	private function randomName() {
 		$str = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890_";
 		$result = "";
 		for ($i = 0; $i<20; $i++) {
