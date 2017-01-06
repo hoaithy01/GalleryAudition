@@ -10,7 +10,11 @@ class Register {
 	private $MSG02 = "Số điện thoại ít nhất 10 chữ số!";
 	private $MSG03 = "Email không đúng!";
 	private $MSG05 = "Sai định dạng ngày! ví dụ: (31/12/1992)";
-
+	private $MSG06 = "Xử lý hình lỗi, xin tải lại!";
+	private $MSG07 = "Chỉ có thể up hình dưới 1MB!";
+	private $MSG08 = "Chỉ nhận định dạng file JPG, JPEG, PNG & GIF";
+	private $MSG09 = "Không up được hình, có thể do file ảnh quá lớn!";
+	
 	public function execute() {
 		$file = "ftp/csv/galleryAudition.csv";
 		$value = $this->getDataFromUser();
@@ -48,17 +52,12 @@ class Register {
 	}
 
 	private function generatePDFFile($html) {
-		$dir = "pdf";
-		if (!is_dir($dir)) {
-			mkdir($dir, "0777", true);
-		}
-		$name = $dir . "/" . $this->randomName() . "Gallery Audition Information.pdf";
+		$name = "pdf/" . $this->randomName(10) . "_Gallery_Audition_Information.pdf";
 		$mpdf=new mPDF('utf-8', 'Letter', 0, '', 0, 0, 0, 0, 0, 0);
 
 		$mpdf->autoScriptToLang = true;
 		$mpdf->autoLangToFont = true;
 		$mpdf->WriteHTML($html);
-
 		$mpdf->Output($name, "F");
 		return $name;
 	}
@@ -119,7 +118,7 @@ class Register {
 			return;
 		}
 		$contents = array(
-			$value->time,$value->name,$value->address,$value->dob,$value->phone,$value->email,$value->image
+			$value->time,$value->name,$value->address,$value->dob,$this->format_phone_number($value->phone),$value->email,$value->image
 		);
 		$output = fopen($file, 'a');
 		fputs($output, $bom =( chr(0xEF) . chr(0xBB) . chr(0xBF) ));
@@ -145,7 +144,7 @@ class Register {
 		$value->name = $_POST["name"];
 		$value->address = $_POST["address"];
 		$value->dob = $_POST["dob"];
-		$value->phone = $this->format_phone_number($_POST["phone"]);
+		$value->phone = $_POST["phone"];
 		$value->email = $_POST["email"];
 		$value->image = $this->getFileUploadImage();
 		$this->validateInput($value);
@@ -218,8 +217,8 @@ class Register {
 	}
 
 	private function getFileUploadImage() {
-		$target_dir = FILEPATH . "ftp/uploads";
-		$target_file = $target_dir . "/" . $this->randomName() . basename($_FILES["avatar"]["name"]);
+		$target_dir = "ftp/uploads";
+		$target_file = $target_dir . "/" . $this->randomName(30) . basename($_FILES["avatar"]["name"]);
 		$uploadOk = 1;
 		$imageFileType = pathinfo($target_file,PATHINFO_EXTENSION);
 		// Check if image file is a actual image or fake image
@@ -269,14 +268,11 @@ class Register {
 			return $target_file;
 		}
 	}
-	private $MSG06 = "Xử lý hình lỗi, xin tải lại!";
-	private $MSG07 = "Chỉ có thể up hình dưới 1MB!";
-	private $MSG08 = "Chỉ nhận định dạng file JPG, JPEG, PNG & GIF";
-	private $MSG09 = "Không up được hình, có thể do file ảnh quá lớn!";
-	private function randomName() {
+
+	private function randomName($length) {
 		$str = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890_";
 		$result = "";
-		for ($i = 0; $i<20; $i++) {
+		for ($i = 0; $i<$length; $i++) {
 			$int = rand(0, strlen($str));
 			$result.= substr($str, $int, 1);
 		}
