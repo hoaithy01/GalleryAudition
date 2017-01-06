@@ -135,6 +135,7 @@ function clearForm() {
 $("#ss-submit").click(function() {
 	var isSuccess = validate();
 	if (isSuccess) {
+		$('body').addClass('loading');
 		/*$(".bs-example-modal-sm").modal("show");
 		$(".modal-header .modal-title").html("Đăng ký");
 		$(".modal-content .modal-body p").html("Xin đợi quá trình đăng ký được hoàn thành!");*/
@@ -151,24 +152,38 @@ $("#ss-submit").click(function() {
 			success: function(res) {
 				if (res.status == "ng") {
 					$(".modal-content .modal-body p").html(res.msg);
-					$(".modal-header .modal-title").html("Lỗi");
-					$(".bs-example-modal-sm").modal("show");
-				} else {
-					// clearForm();
-					$(".modal-header .modal-title").html("Thành Công");
+					// $(".modal-header .modal-title").html("Lỗi");
+					$(".modal-block").modal("show");
+				} else if(res.status == "validate") {
+					serverValidate(res.error);
+				} else if(res.status == "ok") {
+					clearForm();
+					// $(".modal-header .modal-title").html("Thành Công");
 					$(".modal-content .modal-body p").html("Đăng ký thành công!<br>Chúng tôi đã gửi mail tới bạn.<br> Xin hãy kiểm tra lại");
-					$(".bs-example-modal-sm").modal("show");
+					$(".modal-block").modal("show");
 				}
+			}, complete: function() {
+				$('body').removeClass('loading');
 			}
 		})
 	}
 	return false;
 })
 
-var files;
-$('input[type=file]').on('change', function(e) {
-	files = e.target.files;
-})
+function serverValidate(res) {
+	var arr = Object.keys(res);
+	arr.forEach(function(n) {
+		if (res[n] != "")
+			$("input[name="+n+"]").parent().addClass("has-error").find(".help-block").html(res[n]["msg"]).fadeIn("slow");
+		else 
+			$("input[name="+n+"]").parent().removeClass("has-error").find(".help-block").html("This is a required question").hide();
+	})
+}
+
+// var files;
+// $('input[type=file]').on('change', function(e) {
+// 	files = e.target.files;
+// })
 
 $(".ss-q-short").each(function() {
 	$(this).keyup(function() {
